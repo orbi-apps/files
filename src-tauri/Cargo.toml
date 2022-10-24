@@ -17,7 +17,7 @@ tauri-build = { version = "1.0.0", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.0.0", features = ["api-all"] }
-nucleus-rs = { path = "../../nucleus-rs" }
+nucleus-rs = { git = "https://github.com/orbi-systems/nucleus-rs" }
 directories = "4.0.1"
 open = "3.0.3"
 

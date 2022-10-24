@@ -1828,6 +1828,7 @@ dependencies = [
 [[package]]
 name = "nucleus-rs"
 version = "0.1.0"
+source = "git+https://github.com/orbi-systems/nucleus-rs#abb979f626509b857a36674f71affa5dfdc704e8"
 dependencies = [
  "anyhow",
  "eyre",
