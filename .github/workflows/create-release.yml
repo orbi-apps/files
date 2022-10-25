@@ -1,4 +1,4 @@
-name: 'My Workflow'
+name: 'Create release'
 
 on: pull_request
 
