@@ -1,9 +1,13 @@
 <script lang="ts">
+    import { addProvider } from '@junction'
     import type { ProviderId } from 'src/api/Providers'
     import { onMount } from 'svelte'
     import { vfs } from '../store'
+    import NewProvider from './NewProvider/NewProvider.svelte'
 
     let services = []
+
+    let newProviderDialogOpen = false
 
     onMount(async () => {
         services = $vfs.providers || []
@@ -16,11 +20,16 @@
     const goto = (provider: ProviderId) => {
         $vfs.setProvider(provider)
     }
+
+    const newProvider = () => {
+        newProviderDialogOpen = true
+    }
 </script>
+
+<NewProvider open={newProviderDialogOpen} on:close={() => newProviderDialogOpen = false} />
   
-<div class="overflow-x-auto">
+<div class="overflow-x-auto disable-select">
     <table class="table w-full">
-        <!-- head -->
         <thead>
             <tr>
                 <th>Name</th>
@@ -32,6 +41,18 @@
                     <td>{service.id}</td>
                 </tr>
             {/each}
+            <tr class="hover">
+                <td role="button" class="btn btn-ghost btn-block" on:click={newProvider}>
+                    + New Provider
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
+
+<style>
+    td.btn {
+        justify-content: flex-start;
+        font-weight: 400;
+    }
+</style>

@@ -1,6 +1,10 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte"
+
     export let open: boolean
     let dialog: HTMLDialogElement
+
+    const dispatch = createEventDispatcher()
 
     $: if (open && dialog && !dialog.open) {
         dialog.showModal()
@@ -13,15 +17,16 @@
         let isInDialog=(rect.top <= event.clientY && event.clientY <= rect.top + rect.height
           && rect.left <= event.clientX && event.clientX <= rect.left + rect.width);
         if (!isInDialog) {
-            dialog.close();
+            dialog.close()
         }
+
     }
 </script>
 
 <dialog
     bind:this={dialog}
     class="modal-box"
-    on:close
+    on:close={() => dispatch("close")}
     on:click={checkClickOutside}>
     <slot />
 </dialog>

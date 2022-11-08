@@ -2,7 +2,7 @@
   import type { ProviderId } from 'src/api/Providers';
   import { vfs } from '../store'
   import MainFileList from './MainFileList.svelte';
-  import ProvidersSelector from './ProvidersSelector.svelte'
+  import ProvidersSelector from './ProvidersList.svelte'
 
   let activeProvider: ProviderId | undefined = $vfs.activeProvider
 
