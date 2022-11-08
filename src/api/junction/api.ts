@@ -6,6 +6,13 @@ export const listProviders = async (): Promise<any[]> => {
     return await invoke("list_providers")
 }
 
+export const addProvider = async (providerId: ProviderId, data: any) => {
+    console.log(providerId)
+    const args = {providerId: provider(providerId), credentials: JSON.stringify(data)}
+    console.log(args)
+    return await invoke("add_provider", args)
+}
+
 export const listFolderContent = async (objectId: ObjectId, providerId: ProviderId): Promise<any[]> => {
     return await invoke("list_folder_content", {providerId: provider(providerId), path: path(objectId)})
 }
