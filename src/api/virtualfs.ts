@@ -18,6 +18,7 @@ export class VirtualFS {
     fileFilters: FileFilters = {
         foldersOnly: false,
         dotFilesHidden: true,
+        symlinksHidden: true,
         bySuffix: []
     }
 
@@ -299,13 +300,13 @@ export class History {
     goBack() {
         const state = this.#stateHistory.pop()
         if (state) this.#nextCache.push(state)
-        return this.#stateHistory[this.#stateHistory.length - 1]
+        return _.cloneDeep(this.#stateHistory[this.#stateHistory.length - 1])
     }
 
     goForward() {
         const state = this.#nextCache.pop()
         if (state) this.#stateHistory.push(state)
-        return state
+        return _.cloneDeep(this.#stateHistory[this.#stateHistory.length - 1])
     }
 
     push(state: any) {

@@ -5,7 +5,7 @@
 
 use nucleus_rs::interfaces::filesystem::{File, ObjectId};
 use tauri::Manager;
-use std::sync::Mutex;
+use tauri::async_runtime::{Mutex, block_on};
 
 mod storage;
 
@@ -14,47 +14,49 @@ use crate::storage::*;
 pub struct FileSystemInstances (Mutex<ProvidersMap>);
 
 #[tauri::command]
-fn read_file(provider_id: ProviderId, path: ObjectId, instance: tauri::State<FileSystemInstances>) -> String {
-    let mutex = instance.0.lock().unwrap();
+async fn read_file(provider_id: ProviderId, path: ObjectId, instance: tauri::State<'_, FileSystemInstances>) -> Result<String, String> {
+    let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 
     if x.is_ok() {
-        let result = x.unwrap().read_file(path);
+        let result = x.unwrap().read_file(path.clone()).await;
     
         if result.is_ok() {
-            return String::from_utf8(result.unwrap()).unwrap()
+            return Ok(String::from_utf8(result.unwrap()).unwrap())
         }
     }
 
-    String::from("Error reading file")
+    Err(String::from("Error reading ") + path.as_str())
 }
 
 #[tauri::command]
-fn write_file(provider_id: ProviderId, path: ObjectId, parent: ObjectId, content: Vec<u8>, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn write_file(provider_id: ProviderId, path: ObjectId, parent: ObjectId, content: Vec<u8>, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 
     if x.is_ok() {
-        let result = x.unwrap().write_file(path, content);
+        let result = x.unwrap().write_file(path, content).await;
 
-        if result.is_ok() {
-            return ();
+        if result.is_err() {
+            return Err(result.unwrap_err().to_string())
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn list_folder_content(provider_id: ProviderId, path: ObjectId, instance: tauri::State<FileSystemInstances>) -> Vec<File> {
-    let mutex = instance.0.lock().unwrap();
+async fn list_folder_content(provider_id: ProviderId, path: ObjectId, instance: tauri::State<'_, FileSystemInstances>) -> Result<Vec<File>, String> {
+    let mutex = instance.0.lock().await;
 
     match mutex.get_provider(provider_id) {
         Ok(provider) => {
-            let result = provider.list_folder_content(path);
+            let result = provider.list_folder_content(path).await;
 
             if result.is_ok() {
-                return result.unwrap()
+                return Ok(result.unwrap())
             } else {
-                dbg!(result.err());
+                return Err(result.unwrap_err().to_string())
             }
         },
         Err(provider_error) => {
@@ -62,96 +64,110 @@ fn list_folder_content(provider_id: ProviderId, path: ObjectId, instance: tauri:
         }
     }
 
-    vec![]
+    Ok(vec![])
 }
 
 #[tauri::command]
-fn open(provider_id: ProviderId, path: ObjectId, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn open(provider_id: ProviderId, path: ObjectId, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     if let Ok(provider) = mutex.get_provider(provider_id.clone()) {
-        if let Ok(metadata) = provider.get_metadata(path) {
-            open::that(metadata.open_path);
+        if let Ok(metadata) = provider.get_metadata(path).await {
+            open::that(metadata.open_path).expect("Unable to open file with default application");
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn move_to(provider_id: ProviderId, path: ObjectId, new_provider_id: ProviderId, new_path: ObjectId, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn move_to(provider_id: ProviderId, path: ObjectId, new_provider_id: ProviderId, new_path: ObjectId, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     if let Ok(provider) = mutex.get_provider(provider_id.clone()) {
         if provider_id == new_provider_id {
-            provider.move_to(path, new_path);
+            provider.move_to(path, new_path).await.unwrap();
         } else {
             if let Ok(new_provider) = mutex.get_provider(new_provider_id) {
-                if let Ok(file) = provider.read_file(path) {
+                if let Ok(file) = provider.read_file(path).await {
                     new_provider.write_file(new_path, file);
                 }
             }
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn rename(provider_id: ProviderId, path: ObjectId, new_name: String, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn rename(provider_id: ProviderId, path: ObjectId, new_name: String, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 
     if x.is_ok() {
-        let result = x.unwrap().rename(path, new_name);
+        let result = x.unwrap().rename(path, new_name).await;
 
-        if result.is_ok() {
-            return ();
+        if result.is_err() {
+            return Err(result.unwrap_err().to_string())
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn create(provider_id: ProviderId, path: ObjectId, file: File, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn create(provider_id: ProviderId, path: ObjectId, file: File, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 
     if x.is_ok() {
-        let result = x.unwrap().create(path, file);
+        let result = x.unwrap().create(path, file).await;
 
-        if result.is_ok() {
-            return ();
+        if result.is_err() {
+            return Err(result.unwrap_err().to_string())
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn delete(provider_id: ProviderId, path: ObjectId, instance: tauri::State<FileSystemInstances>) -> () {
-    let mutex = instance.0.lock().unwrap();
+async fn delete(provider_id: ProviderId, path: ObjectId, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+    let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 
     if x.is_ok() {
-        let result = x.unwrap().delete(path);
-
-        if result.is_ok() {
-            return ();
+        let result = x.unwrap().delete(path).await;
+        if result.is_err() {
+            return Err(result.unwrap_err().to_string());
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
-fn add_provider(provider_id: ProviderId, credentials: String, instance: tauri::State<FileSystemInstances>) {
-    let providers_map = instance.0.lock().unwrap().add_provider(provider_id, credentials);
+async fn add_provider(provider_id: ProviderId, credentials: String, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
+    let providers_map = &instance.0.lock().await;
+    providers_map.add_provider(provider_id, credentials);
 
-    *instance.0.lock().unwrap() = providers_map;
+    // *instance.0.lock().await = providers_map;
+
+    Ok(())
 }
 
 #[tauri::command]
-fn list_providers(instance: tauri::State<FileSystemInstances>) -> Vec<ProviderId> {
-    instance.0.lock().unwrap().list_providers()
+async fn list_providers(instance: tauri::State<'_, FileSystemInstances>) -> Result<Vec<ProviderId>, ()> {
+    Ok(instance.0.lock().await.list_providers())
 }
 
 #[tauri::command]
-fn remove_provider(provider_id: ProviderId, instance: tauri::State<FileSystemInstances>) {
-    instance.0.lock().unwrap().remove_provider(provider_id);
+async fn remove_provider(provider_id: ProviderId, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
+    instance.0.lock().await.remove_provider(provider_id);
+    Ok(())
 }
 
 fn main() {
-    let mutex = Mutex::new(ProvidersMap::new());
+    let providers_map = block_on(ProvidersMap::new());
+    let mutex = Mutex::new(providers_map);
     let instance = FileSystemInstances (mutex);
 
     tauri::Builder::default()
