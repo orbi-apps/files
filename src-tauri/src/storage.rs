@@ -24,28 +24,28 @@ pub struct ProviderId {
     data: ArbitraryData
 }
 
-pub struct ProvidersMap (HashMap<ProviderId, Box<dyn FileSystem + Send>>);
+pub struct ProvidersMap (HashMap<ProviderId, Box<dyn FileSystem + Send + Sync>>);
 
 impl ProvidersMap {
-    pub fn new() -> ProvidersMap {
+    pub async fn new() -> ProvidersMap {
         let storage = NativeFs { root : "".to_string() };
 
-        let mut providers: HashMap<ProviderId, Box<dyn FileSystem + Send>> = HashMap::new();
+        let mut providers: HashMap<ProviderId, Box<dyn FileSystem + Send + Sync>> = HashMap::new();
 
         if let Some(proj_dirs) = ProjectDirs::from("", "Orbital", "Files") {
             let data_dir = (proj_dirs.data_dir().to_string_lossy() + "/").to_string();
             let x = data_dir.clone();
-            let files = match storage.list_folder_content(ObjectId::directory(data_dir.clone())) {
+            let files = match storage.list_folder_content(ObjectId::directory(data_dir.clone())).await {
                 Ok(val) => val,
-                Err(err) => {
-                    fs::create_dir_all(data_dir);
-                    storage.list_folder_content(ObjectId::directory(x.clone())).unwrap()
+                Err(_err) => {
+                    fs::create_dir_all(data_dir.clone()).expect(format!("Unable to create directory {}", data_dir).as_str());
+                    storage.list_folder_content(ObjectId::directory(x.clone())).await.unwrap()
                 }
             };
 
             for file in files {
                 let path = x.clone() + "/" + file.name.as_str();
-                let content = storage.read_file(ObjectId::plain_text(path.clone())).unwrap();
+                let content = storage.read_file(ObjectId::plain_text(path.clone())).await.unwrap();
                 let file_name_split: Vec<&str> = file.name.splitn(2, ".").collect();
     
                 match file_name_split[1] {
@@ -64,7 +64,7 @@ impl ProvidersMap {
                         providers.insert(provider, Box::new(credentials));
                     },
                     "Google" => {
-                        let credentials: GoogleDrive = serde_json::from_str(String::from_utf8(content).unwrap().as_str()).unwrap();
+                        let credentials = GoogleDrive::new().await.unwrap();
     
                         let provider = ProviderId {
                             id: file_name_split[0].to_string(),
@@ -95,14 +95,14 @@ impl ProvidersMap {
         ProvidersMap(providers)
     }
 
-    pub fn get_provider(&self, provider: ProviderId) -> Result<&Box<dyn FileSystem + Send>, String> {
+    pub fn get_provider(&self, provider: ProviderId) -> Result<&Box<dyn FileSystem + Send + Sync>, String> {
         match self.0.get(&provider) {
             Some(x) => Ok(x),
             None => Err(String::from("Provider not found"))
         }
     }
 
-    pub fn add_provider(&self, provider_id: ProviderId, provider_infos: String) -> ProvidersMap {
+    pub async fn add_provider(&self, provider_id: ProviderId, provider_infos: String) -> ProvidersMap {
         let storage = NativeFs { root : "".to_string() };
         if let Some(proj_dirs) = ProjectDirs::from("", "Orbital", "Files") {
             let path = (proj_dirs.data_dir().to_string_lossy() + "/").to_string();
@@ -111,27 +111,27 @@ impl ProvidersMap {
     
             let file: File = File {
                 id: path.clone() + file_name.as_str(),
-                name: file_name,
-                mime_type: "text/plain".to_string()
+                name: file_name.clone(),
+                mime_type: Some("text/plain".to_string())
             };
     
-            storage.create(ObjectId::plain_text(path), file.clone());
+            storage.create(ObjectId::plain_text(path.clone()), file.clone()).await.expect(format!("Unable to create provider {}", path.clone() + file_name.as_str()).as_str());
     
-            storage.write_file(ObjectId::plain_text(file.id), provider_infos.as_bytes().to_vec()).expect("Unable to write new provider to storage");
+            storage.write_file(ObjectId::plain_text(file.id), provider_infos.as_bytes().to_vec()).await.expect("Unable to write new provider to storage");
     
         }
-        ProvidersMap::new()
+        ProvidersMap::new().await
     }
 
-    pub fn remove_provider(&self, provider_id: ProviderId) -> ProvidersMap {
+    pub async fn remove_provider(&self, provider_id: ProviderId) -> ProvidersMap {
         if let Some(proj_dirs) = ProjectDirs::from("", "Orbital", "Files") {
             let storage = NativeFs { root : "".to_string() };
             let path = (proj_dirs.data_dir().to_string_lossy() + "/").to_string();
     
-            storage.delete(ObjectId::plain_text(path + provider_id.id.as_str() + "." + provider_id.provider_type.as_str())).expect("Unable to remove provider.");
+            storage.delete(ObjectId::plain_text(path + provider_id.id.as_str() + "." + provider_id.provider_type.as_str())).await.expect("Unable to remove provider.");
         }
 
-        ProvidersMap::new()
+        ProvidersMap::new().await
     }
 
     pub fn list_providers(&self) -> Vec<ProviderId> {
