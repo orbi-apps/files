@@ -18,6 +18,7 @@ export class VirtualFS {
     fileFilters: FileFilters = {
         foldersOnly: false,
         dotFilesHidden: true,
+        symlinksHidden: true,
         bySuffix: []
     }
 
