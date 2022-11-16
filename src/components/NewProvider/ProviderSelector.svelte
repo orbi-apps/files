@@ -5,8 +5,9 @@
     const dispatch = createEventDispatcher()
 
     const providers = [
-        { name: "Database", type: Providers.SQL, logo: "/images/database.png" },
+        // { name: "Database", type: Providers.SQL, logo: "/images/database.png" },
         { name: "Google Drive", type: Providers.GoogleDrive, logo: "https://upload.wikimedia.org/wikipedia/commons/d/da/Google_Drive_logo.png" },
+        { name: "OneDrive", type: Providers.OneDrive, logo: "/images/onedrive.png" },
         { name: "Local Drive", type: Providers.Native, logo: "/images/drive.png" },
         { name: "S3", type: Providers.S3, logo: "https://cdn.freebiesupply.com/logos/large/2x/aws-s3-logo-png-transparent.png" },
     ]

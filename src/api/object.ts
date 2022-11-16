@@ -42,7 +42,7 @@ export class MimeType {
 
     isFolder(): boolean {
         if (this._isFolder === undefined) {
-            this._isFolder = ["inode/directory", "directory"].includes(this._type)
+            this._isFolder = ["inode/directory", "directory", "application/vnd.google-apps.folder"].includes(this._type)
         }
         return this._isFolder
     }

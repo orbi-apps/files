@@ -87,9 +87,8 @@ async fn move_to(provider_id: ProviderId, path: ObjectId, new_provider_id: Provi
             provider.move_to(path, new_path).await.unwrap();
         } else {
             if let Ok(new_provider) = mutex.get_provider(new_provider_id) {
-                if let Ok(file) = provider.read_file(path).await {
-                    new_provider.write_file(new_path, file);
-                }
+                let file = provider.read_file(path).await.unwrap();
+                new_provider.write_file(new_path, file).await.unwrap();
             }
         }
     }
@@ -147,7 +146,7 @@ async fn delete(provider_id: ProviderId, path: ObjectId, instance: tauri::State<
 #[tauri::command]
 async fn add_provider(provider_id: ProviderId, credentials: String, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
     let providers_map = &instance.0.lock().await;
-    providers_map.add_provider(provider_id, credentials);
+    providers_map.add_provider(provider_id, credentials).await;
 
     // *instance.0.lock().await = providers_map;
 
@@ -161,7 +160,7 @@ async fn list_providers(instance: tauri::State<'_, FileSystemInstances>) -> Resu
 
 #[tauri::command]
 async fn remove_provider(provider_id: ProviderId, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
-    instance.0.lock().await.remove_provider(provider_id);
+    instance.0.lock().await.remove_provider(provider_id).await;
     Ok(())
 }
 

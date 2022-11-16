@@ -1,4 +1,5 @@
 use nucleus_rs::interfaces::filesystem::{FileSystem, File, ObjectId};
+use nucleus_rs::providers::one_drive::OneDrive;
 use nucleus_rs::providers::{s3::S3, google_drive::GoogleDrive, native_fs::NativeFs};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -34,14 +35,11 @@ impl ProvidersMap {
 
         if let Some(proj_dirs) = ProjectDirs::from("", "Orbital", "Files") {
             let data_dir = (proj_dirs.data_dir().to_string_lossy() + "/").to_string();
-            let x = data_dir.clone();
-            let files = match storage.list_folder_content(ObjectId::directory(data_dir.clone())).await {
-                Ok(val) => val,
-                Err(_err) => {
-                    fs::create_dir_all(data_dir.clone()).expect(format!("Unable to create directory {}", data_dir).as_str());
-                    storage.list_folder_content(ObjectId::directory(x.clone())).await.unwrap()
-                }
-            };
+            let x = &data_dir.clone();
+            if !std::path::Path::new(data_dir.as_str()).exists() {
+                fs::create_dir_all(data_dir.clone()).expect(format!("Unable to create directory {}", data_dir).as_str());
+            }
+            let files = storage.list_folder_content(ObjectId::directory(data_dir.clone())).await.unwrap();
 
             for file in files {
                 let path = x.clone() + "/" + file.name.as_str();
@@ -64,7 +62,7 @@ impl ProvidersMap {
                         providers.insert(provider, Box::new(credentials));
                     },
                     "Google" => {
-                        let credentials = GoogleDrive::new().await.unwrap();
+                        let credentials = GoogleDrive::new(x.clone(), env!("GOOGLE_DRIVE_CLIENT_KEY").to_string()).await.unwrap();
     
                         let provider = ProviderId {
                             id: file_name_split[0].to_string(),
@@ -72,6 +70,17 @@ impl ProvidersMap {
                             data: ArbitraryData(json!({"scope": "Drive"}))
                         };
     
+                        providers.insert(provider, Box::new(credentials));
+                    },
+                    "OneDrive" => {
+                        let credentials: OneDrive = serde_json::from_str(String::from_utf8(content).unwrap().as_str()).unwrap();
+
+                        let provider = ProviderId {
+                            id: file_name_split[0].to_string(),
+                            provider_type: file_name_split[1].to_string(),
+                            data: ArbitraryData(json!({}))
+                        };
+
                         providers.insert(provider, Box::new(credentials));
                     },
                     _ => ()
@@ -84,7 +93,7 @@ impl ProvidersMap {
             let home_path = (user_dirs.home_dir().to_string_lossy() + "/").to_string();
             let native_fs = NativeFs { root: home_path.clone() };
             let provider = ProviderId {
-                id: "native".to_string(),
+                id: "My local files".to_string(),
                 provider_type: "native_fs".to_string(),
                 data: ArbitraryData(json!("{}"))
             };
