@@ -4,6 +4,7 @@
 )]
 
 use nucleus_rs::interfaces::filesystem::{File, ObjectId};
+use serde_json::Value;
 use tauri::Manager;
 use tauri::async_runtime::{Mutex, block_on};
 
@@ -144,11 +145,9 @@ async fn delete(provider_id: ProviderId, path: ObjectId, instance: tauri::State<
 }
 
 #[tauri::command]
-async fn add_provider(provider_id: ProviderId, credentials: String, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
-    let providers_map = &instance.0.lock().await;
-    providers_map.add_provider(provider_id, credentials).await;
-
-    // *instance.0.lock().await = providers_map;
+async fn add_provider(provider_id: ProviderId, credentials: Value, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), ()> {
+    let mut providers_map = instance.0.lock().await;
+    providers_map.add_provider(provider_id, credentials).await.unwrap();
 
     Ok(())
 }
