@@ -104,9 +104,9 @@
         })
 
         moveWindow.once("ready", () => {
-            moveWindow.emit("windowSettings", {
+            moveWindow.emit("windowSettings", JSON.stringify({
                 windowType: "move"
-            })
+            }))
         })
 
         moveWindow.once("tauri://error", function (e) {
@@ -114,6 +114,7 @@
         })
 
         await moveWindow.once("closeDialog", (event) => {
+            console.log(event.payload)
             waitingForUser = false
             const payload = JSON.parse(event.payload as string)
             if (payload.selectedFiles.length > 0) {

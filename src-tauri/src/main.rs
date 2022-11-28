@@ -31,7 +31,7 @@ async fn read_file(provider_id: ProviderId, path: ObjectId, instance: tauri::Sta
 }
 
 #[tauri::command]
-async fn write_file(provider_id: ProviderId, path: ObjectId, parent: ObjectId, content: Vec<u8>, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
+async fn write_file(provider_id: ProviderId, path: ObjectId, content: Vec<u8>, instance: tauri::State<'_, FileSystemInstances>) -> Result<(), String> {
     let mutex = instance.0.lock().await;
     let x = mutex.get_provider(provider_id);
 

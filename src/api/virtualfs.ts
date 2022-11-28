@@ -64,7 +64,7 @@ export class VirtualFS {
         for (const index of this.#selectedFiles) {
             open(this.#files[index].id, this.#activeProvider)
         }
-        this.#selectedFiles = []
+        this.clearSelection()
     }
 
     async openInBrowser() {
@@ -78,7 +78,7 @@ export class VirtualFS {
             const newName = from.replaceAll(from, to)
             rename(this.#files[index].id, this.#activeProvider, newName)
         }
-        this.#selectedFiles = []
+        this.clearSelection()
         this.fetchFilesAndFolders()
     }
 
@@ -88,7 +88,7 @@ export class VirtualFS {
             move_to(file.id, this.#activeProvider, newParent.id, newProvider)
         }
 
-        this.#selectedFiles = []
+        this.clearSelection()
         this.fetchFilesAndFolders()
     }
 
@@ -96,7 +96,7 @@ export class VirtualFS {
         for (const index of this.#selectedFiles) {
             del(this.#files[index].id, this.#activeProvider)
         }
-        this.#selectedFiles = []
+        this.clearSelection()
         this.fetchFilesAndFolders()
     }
 
@@ -160,7 +160,7 @@ export class VirtualFS {
             return 0
         })
 
-        this.#selectedFiles = []
+        this.clearSelection()
 
         this.#onChangeCallbacks.forEach(fn => {
             fn()

@@ -1,6 +1,6 @@
 use nucleus_rs::interfaces::filesystem::{FileSystem, File, ObjectId};
 use nucleus_rs::providers::google_drive::Token;
-use nucleus_rs::providers::one_drive::OneDrive;
+use nucleus_rs::providers::onedrive::OneDrive;
 use nucleus_rs::providers::{s3::S3, google_drive::GoogleDrive, native_fs::NativeFs};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -104,7 +104,7 @@ impl ProvidersMap {
             },
             "OneDrive" => {
                 let mut onedrive = OneDrive::new(None, env!("ONEDRIVE_CLIENT_ID").to_string());
-                onedrive.fetch_credentials().unwrap();
+                onedrive.fetch_credentials().await.unwrap();
                 let serialized = serde_json::to_string(&onedrive).unwrap();
 
                 (Box::new(onedrive), serialized)

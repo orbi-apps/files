@@ -48,7 +48,7 @@
     <li><button on:click={(event) => {event.stopPropagation();$vfs.open()}}>Open in browser</button></li>
     <!-- <li><button on:click={(event) => {event.stopPropagation();$vfs.open()}}>Download</button></li> -->
     <li><button on:click={(event) => {event.stopPropagation();dispatch('rename')}}>Rename</button></li>
-    <!-- <li><button on:click={(event) => {event.stopPropagation();dispatch('move')}}>Move</button></li> -->
+    <li><button on:click={(event) => {event.stopPropagation();dispatch('move')}}>Move</button></li>
     <li><button on:click={(event) => {event.stopPropagation();$vfs.delete(); open = false}}>Delete</button></li>
 </ul>
 {/if}

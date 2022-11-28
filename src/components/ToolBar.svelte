@@ -18,10 +18,11 @@
     let showSearch = false
 
     const onClose = () => {
-        emit('closeDialog', {
+        console.log($vfs.selectedFiles)
+        emit('closeDialog', JSON.stringify({
             selectedFiles: $vfs.selectedFiles.map(file => serializeFile(file)),
             selectedProvider: $vfs.activeProvider
-        })
+        }))
         appWindow.close()
     }
 </script>
