@@ -28,8 +28,8 @@
     }
 
     .card {
-        height: calc(100vh - 18px);
-        width: calc(100vw - 18px);
+        height: 100vh;
+        width: 100vw;
         margin: auto;
         background-color: hsla(var(--b1) / var(--tw-bg-opacity, 1));
     }

@@ -3,6 +3,7 @@
     import Icon from "./utils/Icon.svelte"
     import { mdiContentSave, mdiFolder, mdiFile } from "@mdi/js"
     import type { GenericObject } from "src/api/object"
+    import { formatRelative, isWithinInterval, addHours, format, isToday, isYesterday, isThisYear } from 'date-fns'
 
     export let rename: boolean
     export let active: boolean
@@ -22,6 +23,27 @@
     const submit = (event) => {
         event.preventDefault()
         dispatch('rename', { oldName: file.name, newName })
+    }
+
+    const formatFileSize = (bytes: number) => {
+        if(bytes == 0) return '0 Bytes'
+        const k = 1000
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+    }
+
+    const formatDate = (date: Date) => {
+        if (!date) return ""
+        const shortInterval = {
+            start: date,
+            end: addHours(date, 1)
+        }
+        if (isWithinInterval(Date.now(), shortInterval)) return formatRelative(date, Date.now())
+        if (isToday(date)) return format(date, "H:mm")
+        if (isYesterday(date)) return formatRelative(date, Date.now())
+        if (isThisYear(date)) return format(date, "d MMM")
+        return format(date, "d MMM y")
     }
 </script>
 
@@ -44,4 +66,6 @@
         {file.name}
     {/if}
     </td>
+    <td>{formatFileSize(file.size) || ""}</td>
+    <td>{formatDate(file.modified_at) || ""}</td>
 </tr>

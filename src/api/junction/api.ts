@@ -7,17 +7,17 @@ export const listProviders = async (): Promise<any[]> => {
 }
 
 export const addProvider = async (providerId: ProviderId, data: any) => {
-    console.log(providerId)
     const args = {providerId: provider(providerId), credentials: JSON.stringify(data)}
-    console.log(args)
     return await invoke("add_provider", args)
 }
 
 export const listFolderContent = async (objectId: ObjectId, providerId: ProviderId): Promise<any[]> => {
-    return await invoke("list_folder_content", {providerId: provider(providerId), path: path(objectId)})
+    const x = await invoke("list_folder_content", {providerId: provider(providerId), path: path(objectId)})
+    return x as any[]
 }
 
 export const readFile = async (objectId: ObjectId, providerId: ProviderId): Promise<any[]> => {
+    console.log(path(objectId))
     return await invoke("read_file", {providerId: provider(providerId), path: path(objectId)})
 }
 
@@ -34,6 +34,7 @@ export const write_file = async (objectId: ObjectId, providerId: ProviderId): Pr
 }
 
 export const open = async (objectId: ObjectId, providerId: ProviderId) => {
+    console.log(path(objectId))
     return await invoke("open", {providerId: provider(providerId), path: path(objectId)})
 }
 

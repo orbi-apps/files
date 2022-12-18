@@ -11,12 +11,14 @@
     let updateFilesAndFolders = () => {
         files = $vfs.files
         selectedFiles = $vfs.selectedFilesIndices
+        loading = false
     }
 
     $vfs.register(updateFilesAndFolders)
     $vfs.onSelectionChange(updateFilesAndFolders)
 
     let rename = false
+    let loading = false
 
     let waitingForUser = false
 
@@ -80,6 +82,9 @@
     const onOpen = (event: CustomEvent<any>) => {
         const file = event.detail
         if (file.id.mimeType.isFolder()) {
+            files = []
+            loading = true
+            console.log(files)
             $vfs.push(file.id, file.name)
         } else {
             $vfs.open()
@@ -142,6 +147,7 @@
         {selectedFiles}
         {rename}
         {newFile}
+        {loading}
         on:clickOutside={onClickOutside}
         on:open={onOpen}
         on:create={onConfirmCreateFile}

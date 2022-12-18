@@ -14,7 +14,7 @@ export default (files: GenericObject[], filters: FileFilters) => {
         if (filters.symlinksHidden && isSymlink(file)) return false
         if (filters.bySuffix.length > 0 && !filterBySuffix(file, filters.bySuffix)) return false
 
-        return true
+        return file.name !== '.thinkdrive.container'
     })
 }
 
@@ -36,4 +36,20 @@ const filterBySuffix = (file: GenericObject, suffixes: string[]) => {
     }
 
     return false
+}
+
+export enum SortType {
+    ModifiedAt = "modified_at",
+    Name = "name",
+    Size = "size"
+}
+
+export const sortBy = (files: GenericObject[], sortType: SortType, ascending = true) => {
+    return files.sort((a,b) => {
+        if (a.id.mimeType.isFolder() && !b.id.mimeType.isFolder()) return  -1
+        if (!a.id.mimeType.isFolder() && b.id.mimeType.isFolder()) return 1
+        if (a[sortType] < b[sortType]) return ascending ? -1 : 1
+        if (a[sortType] > b[sortType]) return ascending ? 1 : -1
+        return 0
+    })
 }

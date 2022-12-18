@@ -1,12 +1,11 @@
 <script lang="ts">
-    import { addProvider } from "@junction"
-    import { ObjectId } from "src/api/object"
     import { Providers, type ProviderId } from "src/api/Providers"
     import { createEventDispatcher } from "svelte"
     import Dialog from "../utils/Dialog.svelte"
     import NoCredentials from "./Forms/NoCredentials.svelte"
     import S3Form from "./Forms/S3Form.svelte"
     import ProviderSelector from "./ProviderSelector.svelte"
+    import { vfs } from "src/store"
 
     export let open: boolean
     let step = 0
@@ -21,10 +20,10 @@
         dispatch("close")
     }
 
-    const onSubmitProviderCredentials = (data?: any) => {
+    const onSubmitProviderCredentials = async (data?: any) => {
         id.data = data || {}
 
-        addProvider(id, id.data)
+        await $vfs.addProvider(id, id.data)
         closeDialog()
     }
 

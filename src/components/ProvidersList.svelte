@@ -28,13 +28,8 @@
 
 <NewProvider open={newProviderDialogOpen} on:close={() => newProviderDialogOpen = false} />
   
-<div class="overflow-x-auto disable-select">
-    <table class="table w-full">
-        <thead>
-            <tr>
-                <th>Name</th>
-            </tr>
-        </thead>
+<div class="overflow-x-auto table-auto disable-select h-full">
+    <table class="table w-full overflow-y-scroll">
         <tbody>
             {#each services as service}
                 <tr class="hover" on:dblclick={() => goto(service)}>
@@ -54,5 +49,9 @@
     td.btn {
         justify-content: flex-start;
         font-weight: 400;
+    }
+
+    tbody {
+        overflow-y: scroll;
     }
 </style>

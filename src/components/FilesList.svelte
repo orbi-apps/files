@@ -8,6 +8,7 @@
     export let files: GenericObject[]
     export let selectedFiles: number[]
     export let rename = false
+    export let loading = false
 
     const dispatch = createEventDispatcher();
 
@@ -64,12 +65,14 @@
 
 <BatchRenameDialog bind:open={openRenameDialog} on:confirm={onConfirmBatchRename} />
   
-<div class="overflow-x-auto table-auto disable-select h-full">
+<div class="overflow-x-auto table-auto disable-select max-h-full">
     <table class="table w-full overflow-y-scroll" use:clickOutside={{enabled: !openContextMenu, cb: onClickOutside}}>
         <thead>
             <tr>
                 <th class="file-icon"></th>
                 <th>Name</th>
+                <th>size</th>
+                <th>Modified</th>
             </tr>
         </thead>
         <tbody>
@@ -97,6 +100,12 @@
     </table>
 </div>
 
+{#if loading}
+<div class="spinner-icon">
+    <div class="spinner-inner"></div>
+</div>
+{/if}
+
 <style>
     .file-icon {
         width:1px;
@@ -112,4 +121,45 @@
         border-top-left-radius: 0;
         border-top-right-radius: 0;
     }
+
+    .spinner-icon {
+        margin: 30px auto;
+        opacity:0.75;
+        width: 24px;
+        height: 24px;
+        -webkit-animation: clockwise 500ms linear infinite;
+        animation: clockwise 500ms linear infinite;
+    }
+
+    .spinner-inner {
+        box-sizing: border-box;
+        width: 24px;
+        height: 24px;
+        border: 2px solid #FFF;
+        border-radius: 50%;
+        border-left-color: transparent;
+        border-bottom-color: transparent;
+        -webkit-animation: donut-rotate 1000ms cubic-bezier(.4,0,.22,1) infinite;
+        animation: donut-rotate 1000ms cubic-bezier(.4,0,.22,1) infinite;
+    }
+
+
+@-webkit-keyframes clockwise {
+  0% { -webkit-transform: rotate(0deg) }
+  100% { -webkit-transform: rotate(360deg) }
+}
+@keyframes clockwise {
+  0% { transform: rotate(0deg) }
+  100% { transform: rotate(360deg) }
+}
+@-webkit-keyframes donut-rotate {
+  0% { -webkit-transform: rotate(0) }
+  50% { -webkit-transform: rotate(-140deg) }
+  100% { -webkit-transform: rotate(0) }
+}
+@keyframes donut-rotate {
+  0% { transform: rotate(0) }
+  50% { transform: rotate(-140deg) }
+  100% { transform: rotate(0) }
+}
 </style>

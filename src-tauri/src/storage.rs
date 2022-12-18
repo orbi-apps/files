@@ -137,7 +137,10 @@ impl ProvidersMap {
             let file: File = File {
                 id: path.clone() + file_name.as_str(),
                 name: file_name.clone(),
-                mime_type: Some("text/plain".to_string())
+                mime_type: Some("text/plain".to_string()),
+                created_at: Some(chrono::Utc::now()),
+                modified_at: Some(chrono::Utc::now()),
+                size: None
             };
     
             storage.create(ObjectId::plain_text(path.clone()), file.clone()).await.expect(format!("Unable to create provider {}", path.clone() + file_name.as_str()).as_str());

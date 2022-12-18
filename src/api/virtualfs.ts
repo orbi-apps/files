@@ -1,9 +1,9 @@
 import { listFolderContent, move_to } from "@junction"
 import { MimeType, ObjectId, type GenericObject } from "./object"
 import type { ProviderId } from "./Providers"
-import { create, del, listProviders, open, rename } from "@junction"
+import * as api from "@junction"
 import _ from "lodash"
-import fileFilters, { type FileFilters } from "./fileFilters"
+import filter, { sortBy, SortType, type FileFilters } from "./fileFilters"
 
 export class VirtualFS {
     #activeProvider: ProviderId | undefined
@@ -21,6 +21,7 @@ export class VirtualFS {
         symlinksHidden: true,
         bySuffix: []
     }
+    sortType: SortType = SortType.ModifiedAt
 
     constructor() {
         this.fetchProviders()
@@ -56,13 +57,13 @@ export class VirtualFS {
     }
 
     async create(file: GenericObject) {
-        create(this.#path.top().objectId, this.#activeProvider, file)
+        api.create(this.#path.top().objectId, this.#activeProvider, file)
         this.fetchFilesAndFolders()
     }
 
     async open() {
         for (const index of this.#selectedFiles) {
-            open(this.#files[index].id, this.#activeProvider)
+            api.open(this.#files[index].id, this.#activeProvider)
         }
         this.clearSelection()
     }
@@ -76,7 +77,7 @@ export class VirtualFS {
     async rename(from: string, to: string) {
         for (const index of this.#selectedFiles) {
             const newName = from.replaceAll(from, to)
-            rename(this.#files[index].id, this.#activeProvider, newName)
+            api.rename(this.#files[index].id, this.#activeProvider, newName)
         }
         this.clearSelection()
         this.fetchFilesAndFolders()
@@ -94,7 +95,7 @@ export class VirtualFS {
 
     async delete() {
         for (const index of this.#selectedFiles) {
-            del(this.#files[index].id, this.#activeProvider)
+            api.del(this.#files[index].id, this.#activeProvider)
         }
         this.clearSelection()
         this.fetchFilesAndFolders()
@@ -104,6 +105,16 @@ export class VirtualFS {
         this.#activeProvider = provider
         this.#history.push({path: this.#path, provider: this.#activeProvider})
         this.fetch()
+    }
+
+    async addProvider(providerId: ProviderId, data: any) {
+        await api.addProvider(providerId, data)
+
+        await this.fetchProviders()
+
+        this.#onChangeCallbacks.forEach(fn => {
+            fn()
+        })
     }
 
     async push(objectId: ObjectId, name: string) : Promise<void> {
@@ -139,26 +150,25 @@ export class VirtualFS {
         }
     }
 
-    async fetchFilesAndFolders() : Promise<void> {
-        const z = (x): GenericObject => { return {id : new ObjectId(x.id, new MimeType(x.mime_type)), name: x.name}}
-        const objects = (await listFolderContent(this.#path.top().objectId, this.#activeProvider))
-            .map(x => z(x))
+    async sortAndFilter(fileFilters: FileFilters, sortType: SortType) {
+        this.#files = filter(this.#files, this.fileFilters)
+        
+        this.#files = sortBy(this.#files, SortType.ModifiedAt, false)
+    }
 
-        this.#files = fileFilters(objects, this.fileFilters).filter(
-            (x) => x.name !== '.thinkdrive.container'
-        ).sort((a,b) => {
-            if (a.id.mimeType.isFolder() && !b.id.mimeType.isFolder()) return -1
-            if (!a.id.mimeType.isFolder() && b.id.mimeType.isFolder()) return 1
-            let fa = a.name.toLowerCase()
-            let fb = b.name.toLowerCase()
-            if (fa < fb) {
-                return -1
+    async fetchFilesAndFolders() : Promise<void> {
+        const toGenericObject = (x): GenericObject => {
+            return {
+                id : new ObjectId(x.id, new MimeType(x.mime_type)),
+                name: x.name,
+                modified_at: new Date(x.modified_at),
+                size: x.size
             }
-            if (fa > fb) {
-                return 1
-            }
-            return 0
-        })
+        }
+        this.#files = (await listFolderContent(this.#path.top().objectId, this.#activeProvider))
+            .map(x => toGenericObject(x))
+
+        this.sortAndFilter(this.fileFilters, this.sortType)
 
         this.clearSelection()
 
@@ -168,7 +178,7 @@ export class VirtualFS {
     }
 
     async fetchProviders() : Promise<void> {
-        this.#providers = (await listProviders()).map(x => {
+        this.#providers = (await api.listProviders()).map(x => {
             return {
                 id: x.id,
                 type: x.provider_type,

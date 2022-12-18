@@ -51,6 +51,8 @@ export class MimeType {
 export interface GenericObject {
     id: ObjectId
     name: string
+    modified_at?: Date
+    size?: number
 }
 
 export const serializeFile = (file: GenericObject) => {

@@ -20,6 +20,7 @@ tauri = { version = "1.1", features = ["api-all"] }
 nucleus-rs = { git = "https://github.com/orbi-apps/nucleus-rs" }
 directories = "4.0.1"
 open = "3.0.3"
+chrono = "0.4.23"
 
 [features]
 # by default Tauri runs in production mode
